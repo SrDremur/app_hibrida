@@ -1,4 +1,5 @@
 import 'package:app_hibrida/layouts/box_input.dart';
+import 'package:app_hibrida/rest_api.dart/auth.dart';
 import 'package:flutter/material.dart';
 
 class ColumnRegister extends StatefulWidget {
@@ -10,11 +11,14 @@ class ColumnRegister extends StatefulWidget {
 
 class _ColumnRegisterState extends State<ColumnRegister> {
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+
   // Controladores opcionales para capturar los datos
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
-  final _roleController = TextEditingController();
+  String? _opcionSeleccionada; // Aquí se guarda lo que el usuario elija
+  List<String> _roles = ['adminin', 'vendedor', 'consultor'];
 
   @override
   Widget build(BuildContext context) {
@@ -67,41 +71,93 @@ class _ColumnRegisterState extends State<ColumnRegister> {
                 ),
                 const SizedBox(height: 15),
 
-                BoxInput(
-                  labelText: "Rol",
-                  controller: _roleController,
-                  validator: (value) => value!.isEmpty ? "Falta el rol" : null,
+                DropdownButtonFormField<String>(
+                  value: _opcionSeleccionada,
+                  hint: const Text(
+                    "Selecciona un rol",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  dropdownColor: const Color(
+                    0xFFE37EAF,
+                  ), // Color del fondo del menú al abrirse
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: const Color.fromARGB(76, 255, 255, 255),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  // Mapeamos la lista de strings a elementos del menú
+                  items: _roles.map((String rol) {
+                    return DropdownMenuItem<String>(
+                      value: rol,
+                      child: Text(rol),
+                    );
+                  }).toList(),
+                  onChanged: (nuevoValor) {
+                    setState(() {
+                      _opcionSeleccionada = nuevoValor;
+                    });
+                  },
+                  validator: (value) => value == null ? "Rol" : null,
                 ),
 
                 const SizedBox(height: 30),
 
                 // BOTÓN DE REGISTRO
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF060304), // Negro/Oscuro
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // Aquí llamarás a tu rest_api.dart después
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Registrando usuario..."),
+                _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF060304),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
                           ),
-                        );
-                      }
-                    },
-                    child: const Text(
-                      "REGISTRARSE",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() => _isLoading = true);
+                              // Aquí iría la lógica para enviar los datos al backend
+                              bool succes = await AuthService.register(
+                                _nameController.text,
+                                _emailController.text,
+                                _passController.text,
+                                _opcionSeleccionada!,
+                              );
+
+                              if (mounted) setState(() => _isLoading = false);
+
+                              if (succes) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("¡Registro exitoso!"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                // Aquí podrías redirigir al usuario a otra pantalla, por ejemplo:
+                                // Navigator.pushReplacementNamed(context, '/home');
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Error en el registro"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text(
+                            "Registrar",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      ),
               ],
             ),
           ),

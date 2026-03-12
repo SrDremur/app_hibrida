@@ -30,4 +30,40 @@ class AuthService {
       return false;
     }
   }
+
+  static Future<bool> register(
+    String name,
+    String email,
+    String password,
+    String rol,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/User'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": name,
+          "email": email,
+          "password": password,
+          "rol": rol,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        // Registro exitoso
+        return true;
+      } else {
+        // Error en el registro
+        final Map<String, dynamic> errorData = jsonDecode(response.body);
+        final String mensajeServidor =
+            errorData['mensaje'] ?? "Error desconocido";
+
+        print("Mensaje del servidor: $mensajeServidor");
+        return false;
+      }
+    } catch (e) {
+      print("Error de conexión: $e");
+      return false;
+    }
+  }
 }

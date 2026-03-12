@@ -65,32 +65,74 @@ class _ColumnLoginState extends State<ColumnLogin> {
                 const SizedBox(height: 30),
 
                 // --- EL BOTÓN APARTE ---
-                SizedBox(
-                  width: double.infinity, // Ancho completo
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF060304),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // Si entra aquí, todos los BoxInput son válidos
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("¡Todo listo para entrar!"),
+                _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(
+                              0xFF060304,
+                            ), // Tu color negro
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
                           ),
-                        );
-                      }
-                    },
-                    child: const Text(
-                      "ENVIAR",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
+                          onPressed: () async {
+                            // 1. Validamos los campos localmente
+                            if (_formKey.currentState!.validate()) {
+                              setState(
+                                () => _isLoading = true,
+                              ); // Mostramos carga
+
+                              // 2. Intentamos el Login con la API
+                              // Usamos .trim() para evitar errores por espacios accidentales
+                              bool success = await AuthService.login(
+                                _emailController.text.trim(),
+                                _passController.text.trim(),
+                              );
+
+                              if (mounted)
+                                setState(
+                                  () => _isLoading = false,
+                                ); // Quitamos carga
+
+                              // 3. Respuesta según el resultado de la API
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "¡Bienvenido! Inicio de sesión exitoso",
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                // Aquí podrías usar Navigator.push para cambiar de pestaña
+                              } else {
+                                // El error específico ya lo imprime tu AuthService en consola
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Error: Revisa tus credenciales",
+                                    ),
+                                    backgroundColor: Colors.redAccent,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text(
+                            "ENVIAR",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
                 const SizedBox(height: 15), // Espacio entre botones
                 // --- BOTÓN PARA IR A REGISTRO ---
                 TextButton(
@@ -99,7 +141,7 @@ class _ColumnLoginState extends State<ColumnLogin> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const Register()),
-                    );
+                    ); //ta tiste
                   },
                   child: const Text(
                     "¿No tienes cuenta? Regístrate aquí",
