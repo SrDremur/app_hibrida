@@ -1,5 +1,7 @@
 import 'package:app_hibrida/layouts/box_input.dart';
+import 'package:app_hibrida/rest_api.dart/auth.dart';
 import 'package:flutter/material.dart';
+import 'package:app_hibrida/modules/register.dart';
 
 class ColumnLogin extends StatefulWidget {
   const ColumnLogin({super.key});
@@ -11,6 +13,9 @@ class ColumnLogin extends StatefulWidget {
 class _ColumnLoginState extends State<ColumnLogin> {
   // 1. Creamos la llave para validar todo el grupo
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passController = TextEditingController();
+  bool _isLoading = false; // Para mostrar un círculo de carga
 
   @override
   Widget build(BuildContext context) {
@@ -35,15 +40,26 @@ class _ColumnLoginState extends State<ColumnLogin> {
                 // --- Llamamos los inputs sin botón interno ---
                 BoxInput(
                   labelText: "Email",
-                  validator: (value) =>
-                      value!.isEmpty ? "Falta el email" : null,
+                  controller: _emailController, // <--- ESTO CONECTA EL TEXTO
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return "Falta el email";
+                    bool esValido =
+                        value.endsWith('@gmail.com') ||
+                        value.endsWith('@outlook.com') ||
+                        value.endsWith('@hotmail.com');
+                    return esValido ? null : "Solo @gmail, @outlook o @hotmail";
+                  },
                 ),
                 const SizedBox(height: 15),
                 BoxInput(
                   labelText: "Password",
                   isPassword: true,
-                  validator: (value) =>
-                      value!.length < 6 ? "Mínimo 6 caracteres" : null,
+                  controller: _passController, // <--- ESTO CONECTA LA CLAVE
+                  validator: (value) {
+                    if (value == null || value.isEmpty)
+                      return "Falta la contraseña";
+                    return value.length < 6 ? "Mínimo 6 caracteres" : null;
+                  },
                 ),
 
                 const SizedBox(height: 30),
@@ -72,6 +88,26 @@ class _ColumnLoginState extends State<ColumnLogin> {
                     child: const Text(
                       "ENVIAR",
                       style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15), // Espacio entre botones
+                // --- BOTÓN PARA IR A REGISTRO ---
+                TextButton(
+                  onPressed: () {
+                    // Navegamos a la pantalla de Registro
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const Register()),
+                    );
+                  },
+                  child: const Text(
+                    "¿No tienes cuenta? Regístrate aquí",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration
+                          .underline, // Subrayado para que parezca link
                     ),
                   ),
                 ),

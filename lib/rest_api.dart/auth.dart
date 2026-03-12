@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class AuthService {
   // Cambia esta URL por la de tu API real
-  static const String baseUrl = "https://tiendita-caballerito.onrender.com/";
+  static const String baseUrl = "https://tiendita-caballerito.onrender.com";
 
   static Future<bool> login(String email, String password) async {
     try {
@@ -18,6 +18,11 @@ class AuthService {
         return true;
       } else {
         // Credenciales incorrectas o error de servidor
+        final Map<String, dynamic> errorData = jsonDecode(response.body);
+        final String mensajeServidor =
+            errorData['mensaje'] ?? "Error desconocido";
+
+        print("Mensaje del servidor: $mensajeServidor");
         return false;
       }
     } catch (e) {
