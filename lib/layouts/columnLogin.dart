@@ -1,4 +1,5 @@
 import 'package:app_hibrida/layouts/box_input.dart';
+import 'package:app_hibrida/modules/gestionar_productos.dart';
 import 'package:app_hibrida/rest_api.dart/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:app_hibrida/modules/register.dart';
@@ -111,6 +112,13 @@ class _ColumnLoginState extends State<ColumnLogin> {
                                   ),
                                 );
                                 // Aquí podrías usar Navigator.push para cambiar de pestaña
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const GestionarProductos(),
+                                  ),
+                                );
                               } else {
                                 // El error específico ya lo imprime tu AuthService en consola
                                 ScaffoldMessenger.of(context).showSnackBar(

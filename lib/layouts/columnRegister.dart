@@ -1,4 +1,5 @@
 import 'package:app_hibrida/layouts/box_input.dart';
+import 'package:app_hibrida/modules/login.dart';
 import 'package:app_hibrida/rest_api.dart/auth.dart';
 import 'package:flutter/material.dart';
 
@@ -141,6 +142,12 @@ class _ColumnRegisterState extends State<ColumnRegister> {
                                   ),
                                 );
                                 // Aquí podrías redirigir al usuario a otra pantalla, por ejemplo:
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const Login(),
+                                  ),
+                                );
                                 // Navigator.pushReplacementNamed(context, '/home');
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
