@@ -153,8 +153,11 @@ class _ColumnRegisterState extends State<ColumnRegister> {
                             }
                           },
                           child: const Text(
-                            "Registrar",
-                            style: TextStyle(fontSize: 18),
+                            "REGISTRATE",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
