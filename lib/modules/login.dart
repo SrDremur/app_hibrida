@@ -7,7 +7,7 @@ class Login extends StatelessWidget {
   Widget build(BuildContext context) {
     // TODO: implement build
     return Scaffold(
-      backgroundColor: Color(0xFFFFFFFF),
+      backgroundColor: Color(0xFFDBF0DD),
       body: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),

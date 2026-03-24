@@ -7,12 +7,12 @@ class Register extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF), // Fondo blanco
+      backgroundColor: const Color(0xFFDBF0DD), // Fondo blanco
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(
-          color: Color(0xFF060304),
+          color: Color(0xFF051F20),
         ), // Flecha negra
       ),
       body: Center(

@@ -5,6 +5,12 @@ class AuthService {
   // Cambia esta URL por la de tu API real
   static const String baseUrl = "https://tiendita-caballerito.onrender.com";
 
+  // ─── USUARIO LOGUEADO EN MEMORIA ───────────────────────────────────────────
+  static String? currentUserId;
+  static String? currentUserName;
+  static String? currentUserEmail;
+  static String? currentUserRol;
+
   static Future<bool> login(String email, String password) async {
     try {
       final response = await http.post(
@@ -15,6 +21,16 @@ class AuthService {
 
       if (response.statusCode == 200) {
         // El servidor dice que el usuario y contraseña coinciden
+        // Guardamos los datos del usuario que regresa la API
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        // Ajusta las claves según lo que devuelva TU API
+        currentUserId = data['_id'] ?? data['id'] ?? '';
+        currentUserName = data['name'] ?? data['nombre'] ?? '';
+        currentUserEmail = data['email'] ?? email;
+        currentUserRol = data['rol'] ?? '';
+
+        print("Usuario logueado: $currentUserName (ID: $currentUserId)");
         return true;
       } else {
         // Credenciales incorrectas o error de servidor

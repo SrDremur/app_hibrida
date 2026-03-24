@@ -16,6 +16,7 @@ class ProductoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Color(0xFFDBF0DD),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 3,
@@ -28,12 +29,12 @@ class ProductoCard extends StatelessWidget {
               width: 55,
               height: 55,
               decoration: BoxDecoration(
-                color: const Color(0xFFE37EAF).withOpacity(0.2),
+                color: const Color(0xFF051F20).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.inventory_2,
-                color: Color(0xFFE37EAF),
+                color: Color(0xFF173831),
                 size: 28,
               ),
             ),
@@ -54,7 +55,7 @@ class ProductoCard extends StatelessWidget {
                   Text(
                     '\$${producto.price.toStringAsFixed(2)}',
                     style: const TextStyle(
-                      color: Color(0xFFE37EAF),
+                      color: Color(0xFF235347),
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                     ),

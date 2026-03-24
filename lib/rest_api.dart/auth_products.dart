@@ -8,8 +8,8 @@ class Producto {
   final double price;
   final String? description;
   final String? image;
-  final int? idCategory;
-  final String? dateExp;
+  final int? id_Category;
+  final String? date_exp;
 
   Producto({
     this.idProduct,
@@ -18,8 +18,8 @@ class Producto {
     required this.price,
     this.description,
     this.image,
-    this.idCategory,
-    this.dateExp,
+    this.id_Category,
+    this.date_exp,
   });
 
   factory Producto.fromJson(Map<String, dynamic> json) {
@@ -30,8 +30,8 @@ class Producto {
       price: double.parse(json['price'].toString()),
       description: json['description'],
       image: json['image'],
-      idCategory: json['id_category'],
-      dateExp: json['date_exp'],
+      id_Category: json['id_category'],
+      date_exp: json['date_exp'],
     );
   }
 
@@ -42,21 +42,21 @@ class Producto {
       'price': price,
       'description': description,
       'image': image,
-      'id_category': idCategory,
-      'date_exp': dateExp,
+      'id_category': id_Category,
+      'date_exp': date_exp,
     };
   }
 }
 
 class Categoria {
-  final int idCategory;
+  final int? id_Category;
   final String category;
 
-  Categoria({required this.idCategory, required this.category});
+  Categoria({this.id_Category, required this.category});
 
   factory Categoria.fromJson(Map<String, dynamic> json) {
     return Categoria(
-      idCategory: json['id_category'],
+      id_Category: json['id_category'],
       category: json['category'] ?? '',
     );
   }
@@ -112,6 +112,9 @@ class AuthProducts {
       );
       if (response.statusCode == 200) {
         return Producto.fromJson(jsonDecode(response.body));
+      } else if (response.statusCode == 422) {
+        // Esto te dirá exactamente qué campo falta o está mal escrito
+        print("Error detallado del servidor: ${response.body}");
       }
       throw Exception('Error al editar producto: ${response.statusCode}');
     } catch (e) {
@@ -127,6 +130,38 @@ class AuthProducts {
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Error al eliminar producto: ${response.statusCode}');
       }
+    } catch (e) {
+      print('Error de conexión: $e');
+      rethrow;
+    }
+  }
+
+  //GET /categories
+  static Future<List<Categoria>> getCategorias() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/categories'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((item) => Categoria.fromJson(item)).toList();
+      }
+      throw Exception('Error al obtener categorías: ${response.statusCode}');
+    } catch (e) {
+      print('Error de conexión: $e');
+      rethrow;
+    }
+  }
+
+  static Future<Categoria> crearCategoria(Categoria categoria) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/categories'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(categoria.toJson()),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return Categoria.fromJson(jsonDecode(response.body));
+      }
+      throw Exception('Error al crear categoría: ${response.statusCode}');
     } catch (e) {
       print('Error de conexión: $e');
       rethrow;

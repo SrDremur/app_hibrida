@@ -1,4 +1,5 @@
 import 'package:app_hibrida/layouts/box_input.dart';
+import 'package:app_hibrida/layouts/buttom_navigation.dart';
 import 'package:app_hibrida/modules/gestionar_productos.dart';
 import 'package:app_hibrida/rest_api.dart/auth.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +31,7 @@ class _ColumnLoginState extends State<ColumnLogin> {
             margin: const EdgeInsets.only(top: 50),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFE37EAF),
+              color: const Color(0xFF8CB79B),
               borderRadius: BorderRadius.circular(30),
             ),
             child: Column(
@@ -68,7 +69,9 @@ class _ColumnLoginState extends State<ColumnLogin> {
                 // --- EL BOTÓN APARTE ---
                 _isLoading
                     ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFDBF0DD),
+                        ),
                       )
                     : SizedBox(
                         width: double.infinity,
@@ -76,7 +79,7 @@ class _ColumnLoginState extends State<ColumnLogin> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(
-                              0xFF060304,
+                              0xFF173831,
                             ), // Tu color negro
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(15),
@@ -111,21 +114,19 @@ class _ColumnLoginState extends State<ColumnLogin> {
                                     backgroundColor: Colors.green,
                                   ),
                                 );
+                                //AppConstants.id_user = ;
                                 // Aquí podrías usar Navigator.push para cambiar de pestaña
-                                Navigator.push(
+                                Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        const GestionarProductos(),
+                                    builder: (context) => MainNavigation(),
                                   ),
                                 );
                               } else {
                                 // El error específico ya lo imprime tu AuthService en consola
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                      "Error: Revisa tus credenciales",
-                                    ),
+                                    content: Text("Error: al iniciar secion"),
                                     backgroundColor: Colors.redAccent,
                                   ),
                                 );
@@ -169,7 +170,7 @@ class _ColumnLoginState extends State<ColumnLogin> {
             top: 0,
             child: CircleAvatar(
               radius: 50,
-              backgroundColor: Color(0xFF060304),
+              backgroundColor: Color(0xFF051f20),
               child: Icon(Icons.person, color: Colors.white, size: 50),
             ),
           ),

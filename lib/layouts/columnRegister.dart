@@ -18,6 +18,8 @@ class _ColumnRegisterState extends State<ColumnRegister> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
+  final _passController2 = TextEditingController();
+
   String? _opcionSeleccionada; // Aquí se guarda lo que el usuario elija
   List<String> _roles = ['adminin', 'vendedor', 'consultor'];
 
@@ -33,7 +35,7 @@ class _ColumnRegisterState extends State<ColumnRegister> {
             margin: const EdgeInsets.only(top: 50),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFE37EAF), // Mismo rosa que el login
+              color: const Color(0xFF8CB79B), // Mismo rosa que el login
               borderRadius: BorderRadius.circular(30),
             ),
             child: Column(
@@ -70,21 +72,36 @@ class _ColumnRegisterState extends State<ColumnRegister> {
                   validator: (value) =>
                       value!.length < 6 ? "Mínimo 6 caracteres" : null,
                 ),
+
                 const SizedBox(height: 15),
+
+                BoxInput(
+                  labelText: "Confirm Password",
+                  isPassword: true,
+                  controller: _passController2,
+                  validator: (value) {
+                    if (value == null || value.isEmpty)
+                      return "Falta confirmar la contraseña";
+                    if (value != _passController.text)
+                      return "Las contraseñas no coinciden";
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 30),
 
                 DropdownButtonFormField<String>(
                   value: _opcionSeleccionada,
                   hint: const Text(
                     "Selecciona un rol",
-                    style: TextStyle(color: Colors.white70),
+                    style: TextStyle(color: Color.fromARGB(232, 255, 255, 255)),
                   ),
-                  dropdownColor: const Color(
-                    0xFFE37EAF,
-                  ), // Color del fondo del menú al abrirse
+                  dropdownColor: const Color(0XFF235347),
+                  // Color del fondo del menú al abrirse
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: const Color.fromARGB(76, 255, 255, 255),
+                    fillColor: const Color.fromARGB(122, 35, 83, 71),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
@@ -116,7 +133,7 @@ class _ColumnRegisterState extends State<ColumnRegister> {
                         height: 50,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF060304),
+                            backgroundColor: const Color(0xFF173831),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(15),
                             ),
@@ -176,7 +193,7 @@ class _ColumnRegisterState extends State<ColumnRegister> {
             top: 0,
             child: CircleAvatar(
               radius: 50,
-              backgroundColor: Color(0xFF060304),
+              backgroundColor: Color(0xFF051F20),
               child: Icon(
                 Icons.app_registration,
                 color: Colors.white,
