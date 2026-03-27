@@ -1,7 +1,8 @@
-import 'package:app_hibrida/modules/gestionar_productos.dart';
-import 'package:app_hibrida/modules/gestionar_ventas.dart';
-import 'package:app_hibrida/modules/gestionar_usuarios.dart';
 import 'package:flutter/material.dart';
+import 'package:app_hibrida/modules/gestionar_ventas.dart';
+import 'package:app_hibrida/modules/gestionar_productos.dart';
+import 'package:app_hibrida/modules/gestionar_usuarios.dart'; // ← Tu módulo de usuarios
+import 'package:app_hibrida/modules/consultar_reportes.dart';
 
 class MainNavigation extends StatefulWidget {
   @override
@@ -11,10 +12,11 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _pages = <Widget>[
-    GestionarVentas(),
-    GestionarProductos(),
-    GestionarUsuarios(), // ← nueva pestaña
+  final List<Widget> _pages = [
+    const GestionarVentas(),
+    const GestionarProductos(),
+    const GestionarUsuarios(), // ← Reintegrado aquí
+    const ConsultarReportes(),
   ];
 
   void _onItemTapped(int index) {
@@ -28,7 +30,12 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed, // Necesario para 4 iconos
         backgroundColor: const Color(0xFFDBF0DD),
+        selectedItemColor: const Color(0xFF173831),
+        unselectedItemColor: Colors.grey[600],
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.add_business),
@@ -39,13 +46,14 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Productos',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.manage_accounts_outlined),
-            label: 'Usuarios', // ← antes era "Perfil"
+            icon: Icon(Icons.people_alt),
+            label: 'Usuarios',
+          ), // ← Nuevo icono
+          BottomNavigationBarItem(
+            icon: Icon(Icons.description),
+            label: 'Reportes',
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF173831),
-        onTap: _onItemTapped,
       ),
     );
   }
