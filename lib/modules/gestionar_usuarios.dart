@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:app_hibrida/layouts/user_card.dart';
 import 'package:app_hibrida/layouts/user_form_dialog.dart';
+import 'package:app_hibrida/rest_api.dart/auth_users.dart';
 
 class GestionarUsuarios extends StatefulWidget {
   const GestionarUsuarios({super.key});
@@ -20,38 +21,6 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
 
   final _searchCtrl = TextEditingController();
 
-  // ─── Datos de ejemplo (elimina esto cuando conectes la API) ────────────────
-  final List<Usuario> _datosEjemplo = const [
-    Usuario(
-      idUser: 1,
-      nombre: 'Carlos Méndez',
-      email: 'carlos@ejemplo.com',
-      rol: 'admin',
-      activo: true,
-    ),
-    Usuario(
-      idUser: 2,
-      nombre: 'Sofía Ramírez',
-      email: 'sofia@ejemplo.com',
-      rol: 'vendedor',
-      activo: true,
-    ),
-    Usuario(
-      idUser: 3,
-      nombre: 'Luis Torres',
-      email: 'luis@ejemplo.com',
-      rol: 'cliente',
-      activo: false,
-    ),
-    Usuario(
-      idUser: 4,
-      nombre: 'Ana González',
-      email: 'ana@ejemplo.com',
-      rol: 'vendedor',
-      activo: true,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -65,17 +34,15 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
     super.dispose();
   }
 
-  // ─── Carga de usuarios (reemplaza con tu llamada a la API) ─────────────────
+  // ─── Carga de usuarios desde la API ───────────────────────────────────────
   Future<void> _cargarUsuarios() async {
     setState(() {
       _cargando = true;
       _error = null;
     });
     try {
-      // TODO: reemplazar con tu llamada real, ej:
-      // final lista = await AuthUsers.getUsuarios();
-      await Future.delayed(const Duration(milliseconds: 600)); // simula red
-      setState(() => _usuarios = List.from(_datosEjemplo));
+      final lista = await AuthUsers.getUsuarios();
+      setState(() => _usuarios = lista);
       _aplicarFiltros();
     } catch (e) {
       setState(() => _error = e.toString());
@@ -88,6 +55,7 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
   void _aplicarFiltros() {
     final query = _searchCtrl.text.toLowerCase();
     setState(() {
+      _busqueda = query;
       _usuariosFiltrados = _usuarios.where((u) {
         final coincideBusqueda =
             u.nombre.toLowerCase().contains(query) ||
@@ -99,7 +67,10 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
   }
 
   // ─── Crear / Editar usuario ────────────────────────────────────────────────
-  Future<void> _abrirFormulario({Usuario? usuarioExistente}) async {
+  Future<void> _abrirFormulario({
+    Usuario? usuarioExistente,
+    String? password,
+  }) async {
     final resultado = await mostrarFormularioUsuario(
       context,
       usuario: usuarioExistente,
@@ -107,36 +78,81 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
 
     if (resultado == null) return;
 
-    // TODO: conectar con API
-    // if (usuarioExistente != null) {
-    //   await AuthUsers.editarUsuario(usuarioExistente.idUser!, resultado);
-    // } else {
-    //   await AuthUsers.crearUsuario(resultado);
-    // }
-
-    setState(() {
+    try {
       if (usuarioExistente != null) {
-        final idx = _usuarios.indexWhere(
-          (u) => u.idUser == usuarioExistente.idUser,
+        // ── Editar ──────────────────────────────────────────────────────────
+        final actualizado = await AuthUsers.editarUsuario(
+          usuarioExistente.idUser,
+          resultado,
         );
-        if (idx != -1) _usuarios[idx] = resultado;
+        setState(() {
+          final idx = _usuarios.indexWhere(
+            (u) => u.idUser == usuarioExistente.idUser,
+          );
+          if (idx != -1) _usuarios[idx] = actualizado;
+        });
+        _mostrarSnack('Usuario actualizado', esError: false);
       } else {
-        _usuarios.add(
-          Usuario(
-            idUser: DateTime.now().millisecondsSinceEpoch, // ID temporal
-            nombre: resultado.nombre,
-            email: resultado.email,
-            rol: resultado.rol,
-            activo: resultado.activo,
-          ),
-        );
-      }
-    });
-    _aplicarFiltros();
+        // ── Crear — pedimos contraseña antes de llamar a la API ─────────────
+        final pass = await _pedirContrasena();
+        if (pass == null || pass.isEmpty) return;
 
-    _mostrarSnack(
-      usuarioExistente != null ? 'Usuario actualizado' : 'Usuario creado',
-      esError: false,
+        final creado = await AuthUsers.crearUsuario(resultado, password: pass);
+        setState(() => _usuarios.add(creado));
+        _mostrarSnack('Usuario creado', esError: false);
+      }
+      _aplicarFiltros();
+    } catch (e) {
+      _mostrarSnack(e.toString(), esError: true);
+    }
+  }
+
+  // ─── Diálogo para pedir contraseña al crear ────────────────────────────────
+  Future<String?> _pedirContrasena() async {
+    final ctrl = TextEditingController();
+    bool ver = false;
+
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text('Contraseña del nuevo usuario'),
+          content: TextField(
+            controller: ctrl,
+            obscureText: !ver,
+            decoration: InputDecoration(
+              labelText: 'Contraseña',
+              suffixIcon: IconButton(
+                icon: Icon(ver ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setSt(() => ver = !ver),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF051F20),
+              ),
+              onPressed: () {
+                if (ctrl.text.length >= 6) {
+                  Navigator.pop(ctx, ctrl.text);
+                }
+              },
+              child: const Text(
+                'Confirmar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -168,10 +184,16 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
     );
 
     if (confirmar == true) {
-      // TODO: await AuthUsers.eliminarUsuario(usuario.idUser!);
-      setState(() => _usuarios.removeWhere((u) => u.idUser == usuario.idUser));
-      _aplicarFiltros();
-      _mostrarSnack('Usuario eliminado', esError: false);
+      try {
+        await AuthUsers.eliminarUsuario(usuario.idUser);
+        setState(
+          () => _usuarios.removeWhere((u) => u.idUser == usuario.idUser),
+        );
+        _aplicarFiltros();
+        _mostrarSnack('Usuario eliminado', esError: false);
+      } catch (e) {
+        _mostrarSnack(e.toString(), esError: true);
+      }
     }
   }
 
@@ -242,7 +264,6 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
                   borderSide: BorderSide.none,
                 ),
               ),
-              onChanged: (v) => setState(() => _busqueda = v),
             ),
           ),
 

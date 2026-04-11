@@ -9,7 +9,7 @@ const kBlackApp = Color(0xFF051F20);
 
 /// Modelo simple de usuario (reemplaza con tu modelo real cuando tengas la API)
 class Usuario {
-  final int? idUser;
+  final String? idUser;
   final String nombre;
   final String email;
   final String rol; // 'admin' | 'vendedor' | 'cliente'
