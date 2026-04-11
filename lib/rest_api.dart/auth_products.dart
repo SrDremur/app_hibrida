@@ -84,6 +84,21 @@ class AuthProducts {
     }
   }
 
+  static Future<Producto?> idProductGet(int idPro) async {
+    try{
+      final response = await http.get(Uri.parse('$baseUrl/products/$idPro'));
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = jsonDecode(response.body);
+        return Producto.fromJson(jsonData);
+      }else{
+        print('Error: ${response.statusCode}');
+        return null;
+      }
+    }catch (e) {
+      print('Error: $e');
+    }
+  }
+
   // POST /products
   static Future<Producto> crearProducto(Producto producto) async {
     try {

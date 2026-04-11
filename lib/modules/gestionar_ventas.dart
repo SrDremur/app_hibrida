@@ -1,5 +1,6 @@
 // lib/modules/gestionar_ventas.dart
 
+import 'package:app_hibrida/rest_api.dart/auth_products.dart';
 import 'package:flutter/material.dart';
 import 'package:app_hibrida/models/sale_model.dart';
 import 'package:app_hibrida/layouts/sale_card.dart';
@@ -8,7 +9,7 @@ import 'package:app_hibrida/rest_api.dart/auth_sales.dart';
 
 const kPink = Color(0xFFFFFFFF);
 const kBlack = Color(0xFF173831);
-const kWhite = Color(0xFF8CB79B);
+const kWhite = Color(0xFFFFFFFF);
 
 class GestionarVentas extends StatefulWidget {
   const GestionarVentas({super.key});
@@ -19,8 +20,10 @@ class GestionarVentas extends StatefulWidget {
 
 class _GestionarVentasState extends State<GestionarVentas> {
   List<Sale> _sales = [];
+  List<Producto> _productos = [];
   bool _isLoading = true;
   String? _error;
+  int? id_producto_selec;
 
   @override
   void initState() {

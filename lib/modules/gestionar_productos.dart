@@ -45,7 +45,7 @@ class _GestionarProductosState extends State<GestionarProductos> {
   Future<void> _cargarProductos() async {
     setState(() {
       _cargando = true;
-      _error = null;
+      _error = null;  
     });
     try {
       final lista = await AuthProducts.getProductos();

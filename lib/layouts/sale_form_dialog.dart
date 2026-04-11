@@ -1,12 +1,14 @@
+import 'package:app_hibrida/layouts/box_input.dart';
 import 'package:app_hibrida/rest_api.dart/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:app_hibrida/models/sale_model.dart';
+import 'package:app_hibrida/rest_api.dart/auth_products.dart';
 
 const kPink = Color(0xFFE37EAF);
 const kBlack = Color(0xFF060304);
 const kWhite = Color(0xFFFFFFFF);
-const kPinkLight = Color(0xFFF2B8D5);
-const kPinkDark = Color(0xFFB8527E);
+const kPinkLight = Color(0xFF8CB79B);
+const kPinkDark = Color(0xFF173831);
 
 class SaleFormDialog extends StatefulWidget {
   final Sale? existingSale;
@@ -20,15 +22,18 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _userController = TextEditingController();
   final _totalController = TextEditingController();
-  final user = AuthService();
-  final name = AuthService.currentUserName;
 
-  List<Map<String, TextEditingController>> _productControllers = [];
+  final user = AuthService.currentUserId;
+  final name = AuthService.currentUserName;
+  List<Producto> _productos = [];
+
+ List<Map<String, TextEditingController>> _productControllers = [];
 
   bool get _isEditing => widget.existingSale != null;
 
   @override
   void initState() {
+    _cargarProductos();
     super.initState();
     if (_isEditing) {
       _userController.text = widget.existingSale!.idUser;
@@ -55,6 +60,7 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
         'id': TextEditingController(text: idProduct),
         'qty': TextEditingController(text: quantity),
         'price': TextEditingController(text: price),
+        'subtotal': TextEditingController(text: '0.00'),
       });
     });
   }
@@ -71,6 +77,53 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
     }
     super.dispose();
   }
+
+  Future<void> _cargarProductos() async {
+    try{
+      final lista = await AuthProducts.getProductos();
+      if(!mounted) return;
+      setState(() => _productos = lista);
+    }catch (e) {
+      print('error al cargar productos: $e');
+    }
+  }
+
+  Future<void> _Subtotal(int index) async {
+    final row = _productControllers[index];
+    final idString = row['id']?.text ?? ''; 
+    final qtyString = row['qty']?.text ?? '';
+
+    if (idString.isNotEmpty && qtyString.isNotEmpty) {
+      int? id = int.tryParse(idString);
+      int cant = int.tryParse(qtyString) ?? 0;
+
+      if (id != null) {
+      // 1. Aquí llamas a tu API de Render
+        final producto = await AuthProducts.idProductGet(id);
+      
+        if (!mounted) return; // Seguridad por si cierran el diálogo
+
+        if (producto != null) {
+          setState(() {
+          // 2. Calculamos el subtotal real
+            double sub = producto.price * cant;
+            row['subtotal']!.text = sub.toStringAsFixed(2);
+            row['price']!.text = producto.price.toString();
+          
+          // 3. Actualizamos el total de abajo automáticamente
+            _calcularTotalGeneral(); 
+          });
+        }
+      }
+    }
+  }
+  void _calcularTotalGeneral() {
+  double total = 0.0;
+  for (var row in _productControllers) {
+    total += double.tryParse(row['subtotal']!.text) ?? 0.0;
+  }
+  _totalController.text = total.toStringAsFixed(2);
+}
 
   InputDecoration _inputDecoration(String label) => InputDecoration(
     labelText: label,
@@ -100,18 +153,19 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
               idProduct: row['id']!.text.trim(),
               quantity: int.tryParse(row['qty']!.text.trim()) ?? 0,
               price: double.tryParse(row['price']!.text.trim()) ?? 0.0,
+              subtotal: double.tryParse(row['subtotal']!.text.trim()) ?? 0.0,
             ),
           )
           .toList();
 
       final sale = Sale(
         id: widget.existingSale?.id,
-        idUser: _userController.text.trim(),
+        idUser: AuthService.currentUserId ?? '',
         products: products,
         totalPrice: double.tryParse(_totalController.text.trim()) ?? 0.0,
         saleDate: DateTime.now(),
       );
-
+      print("Objeto Sale en JSON: ${sale.toJson()}");
       Navigator.pop(context, sale);
     }
   }
@@ -180,7 +234,9 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
               ..._productControllers.asMap().entries.map((entry) {
                 final i = entry.key;
                 final row = entry.value;
+                final int? currentId = int.tryParse(row['id']!.text);
                 return Container(
+                  key: UniqueKey(),
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
@@ -212,42 +268,58 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      TextFormField(
-                        controller: row['id'],
-                        decoration: _inputDecoration('ID Producto'),
-                        style: const TextStyle(color: kBlack, fontSize: 13),
-                        validator: (v) =>
-                            (v == null || v.isEmpty) ? 'Requerido' : null,
+                      
+                      DropdownButtonFormField<int>(
+                        value: _productos.any((p) => p.idProduct == currentId) ? currentId : null,
+                        hint: const Text(
+                          'Producto',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        dropdownColor: const Color(0xFF235347),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xFF8CB79B),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        items: _productos.map((p) => DropdownMenuItem<int>(
+                            value: p.idProduct,
+                            child: Text(p.product),
+                          )).toList(),
+
+                        onChanged:  (int? nuevoId) {
+                          setState(() {
+                            row['id']!.text = nuevoId.toString();
+                          });
+                          _Subtotal(i);
+                        },
                       ),
                       const SizedBox(height: 8),
+
                       Row(
                         children: [
                           Expanded(
-                            child: TextFormField(
+                            child: 
+                            BoxInput(
+                              labelText: 'Cantidad',
                               controller: row['qty'],
-                              decoration: _inputDecoration('Cantidad'),
                               keyboardType: TextInputType.number,
-                              style: const TextStyle(
-                                color: kBlack,
-                                fontSize: 13,
-                              ),
-                              validator: (v) =>
-                                  (v == null || v.isEmpty) ? 'Req.' : null,
-                            ),
+                              onChanged:(v) {
+                                _Subtotal(i);
+                              },
+                              validator: (v){
+                                if(v!.isEmpty) return 'Agregue una cantidad';
+                                if(int.tryParse(v) == null) return 'Solo permite numeros';
+                                return null;
+                              },
+                              )
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: TextFormField(
-                              controller: row['price'],
-                              decoration: _inputDecoration('Precio'),
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(
-                                color: kBlack,
-                                fontSize: 13,
-                              ),
-                              validator: (v) =>
-                                  (v == null || v.isEmpty) ? 'Req.' : null,
-                            ),
+                            child: 
+                            Text('Subtotal: ${row['subtotal']!.text}')
                           ),
                         ],
                       ),

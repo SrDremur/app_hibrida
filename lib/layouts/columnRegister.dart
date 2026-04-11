@@ -21,7 +21,7 @@ class _ColumnRegisterState extends State<ColumnRegister> {
   final _passController2 = TextEditingController();
 
   String? _opcionSeleccionada; // Aquí se guarda lo que el usuario elija
-  List<String> _roles = ['adminin', 'vendedor', 'consultor'];
+  List<String> _roles = ['admin', 'vendedor', 'consultor'];
 
   @override
   Widget build(BuildContext context) {

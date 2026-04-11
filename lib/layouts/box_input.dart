@@ -5,6 +5,11 @@ class BoxInput extends StatefulWidget {
   final String? Function(String?)? validator;
   final bool isPassword;
   final TextEditingController? controller;
+  // 1. Agregamos la propiedad keyboardType
+  final TextInputType keyboardType; 
+  // 2. Agregamos la propiedad onChanged para que puedas detectar cambios en tiempo real
+  final Function(String)? onChanged; 
+  final Function(String)? onFieldSubmitted;
 
   const BoxInput({
     super.key,
@@ -12,6 +17,9 @@ class BoxInput extends StatefulWidget {
     this.validator,
     this.isPassword = false,
     this.controller,
+    this.keyboardType = TextInputType.text, // Por defecto será texto normal
+    this.onChanged, // Es opcional
+    this.onFieldSubmitted,
   });
 
   @override
@@ -19,13 +27,11 @@ class BoxInput extends StatefulWidget {
 }
 
 class _BoxInputState extends State<BoxInput> {
-  // Esta variable interna controlará si el texto se oculta o no
   late bool _obscureText;
 
   @override
   void initState() {
     super.initState();
-    // Inicializamos con el valor que viene por parámetro (isPassword)
     _obscureText = widget.isPassword;
   }
 
@@ -33,7 +39,12 @@ class _BoxInputState extends State<BoxInput> {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: widget.controller,
-      obscureText: _obscureText, // Usamos nuestra variable interna
+      obscureText: _obscureText,
+      // 3. Conectamos el keyboardType al TextFormField
+      keyboardType: widget.keyboardType, 
+      // 4. Conectamos el onChanged
+      onChanged: widget.onChanged, 
+      onFieldSubmitted: widget.onFieldSubmitted,
       style: const TextStyle(color: Color(0XFF051F20)),
       decoration: InputDecoration(
         labelText: widget.labelText,
@@ -41,22 +52,15 @@ class _BoxInputState extends State<BoxInput> {
         filled: true,
         fillColor: const Color.fromARGB(132, 255, 255, 255),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-
-        // Agregamos el ojito solo si es un campo de password
         suffixIcon: widget.isPassword
             ? IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
                   color: const Color(0XFF051F20),
                 ),
-                onPressed: () {
-                  // Esto es lo que hace la magia de cambiar el icono y el texto
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
-                },
+                onPressed: () => setState(() => _obscureText = !_obscureText),
               )
-            : null, // Si no es password, no muestra nada
+            : null,
       ),
       validator: widget.validator,
     );

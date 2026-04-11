@@ -8,26 +8,41 @@ class SalesService {
 
   // GET todas las ventas
   static Future<List<Sale>> getSales() async {
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl/sales'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => Sale.fromJson(json)).toList();
-      }
-    } catch (e) {
-      print('Error getSales: $e');
+  try {
+    final response = await http.get(Uri.parse('$_baseUrl/Sale'));
+
+    print("Respuesta de la API: ${response.statusCode}");
+    
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Sale.fromJson(json)).toList();
+    } else {
+      // Si no es 200, queremos saber por qué
+      print("Error en el servidor: ${response.body}");
+      return [];
     }
+  } catch (e) {
+    // Aquí es donde te salía el error del 'int' vs 'String'
+    print('Error crítico en getSales: $e');
     return [];
   }
+}
 
   // POST crear venta
   static Future<bool> createSale(Sale sale) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/sales'),
+        Uri.parse('$_baseUrl/Sale'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(sale.toJson()),
       );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        print("¡Venta guardada!");
+      } else {
+  // ESTO ES LO QUE NECESITAMOS VER:
+        print("CÓDIGO DE ERROR: ${response.statusCode}");
+        print("DETALLE DEL ERROR: ${response.body}"); 
+      }
       return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
       print('Error createSale: $e');
@@ -39,7 +54,7 @@ class SalesService {
   static Future<bool> updateSale(String id, Sale sale) async {
     try {
       final response = await http.put(
-        Uri.parse('$_baseUrl/sales/$id'),
+        Uri.parse('$_baseUrl/Sale/$id'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(sale.toJson()),
       );

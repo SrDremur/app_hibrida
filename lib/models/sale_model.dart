@@ -2,23 +2,27 @@ class SaleProduct {
   final String idProduct;
   final int quantity;
   final double price;
+  final double subtotal;
 
   SaleProduct({
     required this.idProduct,
     required this.quantity,
     required this.price,
+    required this.subtotal,
   });
 
   factory SaleProduct.fromJson(Map<String, dynamic> json) => SaleProduct(
-    idProduct: json['id_product'] ?? '',
+    idProduct: (json['id_product'] ?? '').toString(),
     quantity: json['quantity'] ?? 0,
     price: (json['price'] ?? 0).toDouble(),
+    subtotal: (json['subtotal'] ?? 0).toDouble(),
   );
 
   Map<String, dynamic> toJson() => {
     'id_product': idProduct,
     'quantity': quantity,
     'price': price,
+    'subtotal': subtotal,
   };
 }
 
@@ -39,7 +43,7 @@ class Sale {
 
   factory Sale.fromJson(Map<String, dynamic> json) => Sale(
     id: json['_id'],
-    idUser: json['id_user'] ?? '',
+    idUser: (json['id_user'] ?? '').toString(),
     products: (json['products'] as List<dynamic>? ?? [])
         .map((p) => SaleProduct.fromJson(p))
         .toList(),
