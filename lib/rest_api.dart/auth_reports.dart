@@ -2,32 +2,41 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ReportService {
-  static const String baseUrl = "https://api-python-app.onrender.com";
+  static const String _mongoUrl = "https://tiendita-caballerito.onrender.com";
+  static const String _postgresUrl = "https://api-python-app.onrender.com";
 
-  static Future<List<dynamic>> fetchProductos() async {
+  static Future<List<dynamic>> fetchVentas() async {
     try {
-      // Usamos el endpoint '/products' que ya confirmamos que funciona
-      final response = await http.get(Uri.parse('$baseUrl/products'));
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
+      final response = await http.get(Uri.parse('$_mongoUrl/Sale'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
       return [];
     } catch (e) {
-      print('Error en fetchProductos: $e');
+      print('Error en fetchVentas: $e');
       return [];
     }
   }
 
-  static Future<List<dynamic>> fetchVentas() async {
+  // NUEVA FUNCIÓN: Formatea los datos para que el PDF los entienda
+  static Future<List<Map<String, dynamic>>> getVentasParaReporte() async {
+    List<dynamic> ventasRaw = await fetchVentas();
+
+    return ventasRaw.map((v) {
+      return {
+        // Ajustamos los nombres de los campos de MongoDB a los que usa tu tabla
+        'fecha': v['sale_date']?.toString().split('T')[0] ?? 'Sin fecha',
+        'usuario': v['id_user'] ?? 'Desconocido',
+        'total': v['total_price']?.toDouble() ?? 0.0,
+      };
+    }).toList();
+  }
+
+  static Future<List<dynamic>> fetchProductos() async {
     try {
-      // Si el endpoint de ventas es /sales, cámbialo aquí
-      final response = await http.get(Uri.parse('$baseUrl/sales'));
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
+      final response = await http.get(Uri.parse('$_postgresUrl/products'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
       return [];
     } catch (e) {
-      print('Error en fetchVentas: $e');
+      print('Error en fetchProductos: $e');
       return [];
     }
   }

@@ -6,7 +6,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:file_picker/file_picker.dart';
 import 'package:printing/printing.dart';
-// Importa2tu nuevo servicio de reportes y el auth para la URL
 import 'package:app_hibrida/rest_api.dart/auth_reports.dart';
 
 class ConsultarReportes extends StatefulWidget {
@@ -20,46 +19,54 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
   static const PdfColor darkGreen = PdfColor.fromInt(0xFF173831);
   static const PdfColor resumenBoxColor = PdfColor.fromInt(0xFF1B302F);
 
-  // Variable para controlar el estado de carga
   bool _estaCargando = false;
+
+  // ✅ Formateador de fecha corregido
+  String _formatearFecha(String? iso) {
+    if (iso == null) return 'N/A';
+    try {
+      final dt = DateTime.parse(iso);
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+    } catch (_) {
+      return iso;
+    }
+  }
 
   Future<void> _exportarReporte(BuildContext context, String tipo) async {
     setState(() => _estaCargando = true);
 
     try {
-      // 1. OBTENER DATOS REALES DESDE EL BACKEND (Render)
+      // 1. CARGA DE DATOS Y VARIABLES (Definidas al inicio para evitar "Undefined name")
       List<dynamic> datosBack = [];
+      List<dynamic> listaProductos = [];
+      double ingresoTotal = 0;
+      String promedio = '0.00';
+
       if (tipo == "Ventas") {
-        datosBack = await ReportService.fetchVentas();
+        final resultados = await Future.wait([
+          ReportService.fetchVentas(),
+          ReportService.fetchProductos(),
+        ]);
+        datosBack = resultados[0];
+        listaProductos = resultados[1];
       } else {
         datosBack = await ReportService.fetchProductos();
+        listaProductos = datosBack;
       }
 
-      if (datosBack.isEmpty) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("⚠️ No se encontraron datos para este reporte"),
-            ),
-          );
-        }
-        setState(() => _estaCargando = false);
-        return;
-      }
-
-      // Cálculos automáticos para el Resumen General
-      double ingresoTotal = 0;
+      // 2. CÁLCULOS
       for (var item in datosBack) {
-        // Intentamos sumar el campo 'total' o 'precio' según el tipo
-        var valorStr = tipo == "Ventas"
-            ? item['total']
-            : item['price'] ?? item['precio'];
-        ingresoTotal += double.tryParse(valorStr?.toString() ?? '0') ?? 0;
+        dynamic valor = (tipo == "Ventas")
+            ? item['total_price']
+            : item['price'];
+        ingresoTotal += double.tryParse(valor?.toString() ?? '0') ?? 0.0;
       }
 
-      String promedio = (ingresoTotal / datosBack.length).toStringAsFixed(2);
+      promedio = datosBack.isNotEmpty
+          ? (ingresoTotal / datosBack.length).toStringAsFixed(2)
+          : '0.00';
 
-      // 2. CONFIGURACIÓN DEL PDF (Logo y Fuentes)
+      // 3. RECURSOS DEL PDF
       pw.MemoryImage? logoImage;
       try {
         final ByteData logoData = await rootBundle.load(
@@ -67,14 +74,14 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
         );
         logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
       } catch (e) {
-        print("❌ Error cargando logo: $e");
+        print("❌ Error logo: $e");
       }
 
       final pdf = pw.Document();
       final fontRegular = await PdfGoogleFonts.robotoRegular();
       final fontBold = await PdfGoogleFonts.robotoBold();
 
-      // 3. CONSTRUCCIÓN DEL DOCUMENTO
+      // 4. GENERACIÓN DEL DOCUMENTO (Tu diseño original)
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
@@ -131,7 +138,7 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
               ),
               pw.SizedBox(height: 25),
 
-              // RESUMEN DINÁMICO
+              // RESUMEN GENERAL (Aquí ya no hay error de ingresoTotal)
               pw.Text(
                 "Resumen General",
                 style: pw.TextStyle(fontSize: 18, font: fontBold),
@@ -162,7 +169,7 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
               ),
               pw.SizedBox(height: 25),
 
-              // TABLA DE DATOS DEL BACKEND
+              // TABLA DE DATOS
               pw.Text(
                 "Detalle de $tipo",
                 style: pw.TextStyle(fontSize: 18, font: fontBold),
@@ -181,32 +188,54 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
                 cellStyle: pw.TextStyle(font: fontRegular, fontSize: 10),
                 headerDecoration: const pw.BoxDecoration(color: darkGreen),
                 headers: tipo == "Ventas"
-                    ? <String>['#', 'Fecha', 'Usuario', 'Total']
+                    ? <String>['#', 'Fecha', 'Productos', 'Total']
                     : <String>['#', 'Producto', 'Stock', 'Precio'],
                 data: datosBack.asMap().entries.map((entry) {
                   int idx = entry.key + 1;
                   var item = entry.value;
 
                   if (tipo == "Ventas") {
+                    List productosEnVenta = item['products'] as List? ?? [];
+                    List<String> nombresList = [];
+
+                    for (var pEnVenta in productosEnVenta) {
+                      final idBuscado = pEnVenta['id_product'].toString();
+                      var prodEncontrado = listaProductos.firstWhere(
+                        (p) =>
+                            p['id'].toString() == idBuscado ||
+                            p['id_product']?.toString() == idBuscado,
+                        orElse: () => null,
+                      );
+
+                      String nombre = prodEncontrado != null
+                          ? (prodEncontrado['product']?.toString() ??
+                                prodEncontrado['name']?.toString() ??
+                                "Sin nombre")
+                          : "ID: $idBuscado";
+
+                      nombresList.add("$nombre (x${pEnVenta['quantity']})");
+                    }
+
                     return [
                       idx.toString(),
-                      item['fecha']?.toString() ?? 'N/A',
-                      item['usuario']?.toString() ?? 'N/A',
-                      "\$${item['total']?.toString() ?? '0.00'}",
+                      _formatearFecha(item['sale_date']?.toString()),
+                      nombresList.isEmpty
+                          ? "Sin detalle"
+                          : nombresList.join(", "),
+                      "\$${double.tryParse(item['total_price']?.toString() ?? '0')?.toStringAsFixed(2) ?? '0.00'}",
                     ];
                   } else {
-                    // CAMBIO CLAVE AQUÍ: 'product' en lugar de 'name'
                     return [
                       idx.toString(),
                       item['product']?.toString() ?? 'N/A',
                       item['stock']?.toString() ?? '0',
-                      "\$${item['price']?.toString() ?? '0.00'}",
+                      "\$${double.tryParse(item['price']?.toString() ?? '0')?.toStringAsFixed(2) ?? '0.00'}",
                     ];
                   }
                 }).toList(),
               ),
 
-              // TOTAL AL FINAL
+              // TOTAL FINAL
               pw.Container(
                 alignment: pw.Alignment.centerRight,
                 padding: const pw.EdgeInsets.all(5),
@@ -225,13 +254,13 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
         ),
       );
 
-      // 4. GUARDAR ARCHIVO
+      // 5. GUARDAR Y NOTIFICAR
       final Uint8List pdfBytes = await pdf.save();
       String? ruta = await FilePicker.saveFile(
-        dialogTitle: 'Guardar Reporte',
         fileName: 'Reporte_${tipo.toLowerCase()}.pdf',
         type: FileType.custom,
-        allowedExtensions: ['pdf'],);
+        allowedExtensions: ['pdf'],
+      );
 
       if (ruta != null) {
         final File archivo = File(ruta);
@@ -249,64 +278,7 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Centro de Reportes"),
-        backgroundColor: const Color(0xFF173831),
-        foregroundColor: Colors.white,
-      ),
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                _btnReporte(
-                  context,
-                  "Reporte de Ventas",
-                  Icons.receipt_long,
-                  "Ventas",
-                ),
-                _btnReporte(
-                  context,
-                  "Reporte de Stock",
-                  Icons.inventory_2,
-                  "Stock",
-                ),
-              ],
-            ),
-          ),
-          // Si está cargando, mostramos un overlay con el spinner
-          if (_estaCargando)
-            Container(
-              color: Colors.black26,
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF173831)),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _btnReporte(
-    BuildContext context,
-    String titulo,
-    IconData icon,
-    String tipo,
-  ) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF173831)),
-        title: Text(titulo),
-        trailing: const Icon(Icons.download, color: Colors.blue),
-        onTap: _estaCargando ? null : () => _exportarReporte(context, tipo),
-      ),
-    );
-  }
-
+  // ✅ Método de las cajas de resumen (Dentro de la clase)
   pw.Widget _buildResumenBox(
     String valor,
     String etiqueta,
@@ -339,6 +311,63 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Centro de Reportes"),
+        backgroundColor: const Color(0xFF173831),
+        foregroundColor: Colors.white,
+      ),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                _btnReporte(
+                  context,
+                  "Reporte de Ventas",
+                  Icons.receipt_long,
+                  "Ventas",
+                ),
+                _btnReporte(
+                  context,
+                  "Reporte de Stock",
+                  Icons.inventory_2,
+                  "Stock",
+                ),
+              ],
+            ),
+          ),
+          if (_estaCargando)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF173831)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _btnReporte(
+    BuildContext context,
+    String titulo,
+    IconData icon,
+    String tipo,
+  ) {
+    return Card(
+      child: ListTile(
+        leading: Icon(icon, color: const Color(0xFF173831)),
+        title: Text(titulo),
+        trailing: const Icon(Icons.download, color: Colors.blue),
+        onTap: _estaCargando ? null : () => _exportarReporte(context, tipo),
       ),
     );
   }
