@@ -68,8 +68,8 @@ class SalesService {
   // DELETE eliminar venta
   static Future<bool> deleteSale(String id) async {
     try {
-      final response = await http.delete(Uri.parse('$_baseUrl/sales/$id'));
-      return response.statusCode == 200;
+      final response = await http.delete(Uri.parse('$_baseUrl/Sale/$id'));
+      return response.statusCode == 404;
     } catch (e) {
       print('Error deleteSale: $e');
       return false;

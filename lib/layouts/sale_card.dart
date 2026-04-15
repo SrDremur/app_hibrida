@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:app_hibrida/models/sale_model.dart';
 
-const kPink = Color(0xFFE37EAF);
-const kBlack = Color(0xFF060304);
-const kWhite = Color(0xFFFFFFFF);
-const kPinkLight = Color(0xFFF2B8D5);
-const kPinkDark = Color(0xFFB8527E);
+const kPink = Color(0xFF235347);
+const kBlack = Color(0xFF051F20);
+const kWhite = Color(0xFFDBF0DD);
+const kPinkLight = Color(0xFF8CB79B);
+const kPinkDark = Color(0xFF235347);
+const colorx = Color(0xFF18B3F0);
 
 class SaleCard extends StatelessWidget {
   final Sale sale;
@@ -52,13 +53,13 @@ class SaleCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.receipt, color: kBlack, size: 20),
+                const Icon(Icons.receipt, color: Color(0xFFFFFFFF), size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Venta #${sale.id ?? "—"}',
                     style: const TextStyle(
-                      color: kBlack,
+                      color: Color(0xFFFFFFFF),
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -67,7 +68,7 @@ class SaleCard extends StatelessWidget {
                 Text(
                   dateStr,
                   style: TextStyle(
-                    color: kBlack.withOpacity(0.7),
+                    color: Color(0xFFFFFFFF).withOpacity(0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -128,7 +129,7 @@ class SaleCard extends StatelessWidget {
                       child: Text(
                         '\$${sale.totalPrice.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          color: kPink,
+                          color: Color(0xFFFFFFFF),
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -136,7 +137,7 @@ class SaleCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: kPinkDark),
+                      icon: const Icon(Icons.edit_outlined, color: kBlack),
                       tooltip: 'Editar',
                       onPressed: onEdit,
                     ),

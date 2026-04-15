@@ -85,12 +85,14 @@ class _GestionarProductosState extends State<GestionarProductos> {
     _categoriaSeleccionada = p.id_Category;
   }
 
-  void _mostrarDialogoNuevaCategoria() {
+  Future <void> _mostrarDialogoNuevaCategoria() async{
     final TextEditingController _nuevaCatController = TextEditingController();
+    // Guardamos el context de la pantalla principal antes de entrar al builder
+    final mainContext = context; 
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) { // Renombramos para no confundirlos
         return AlertDialog(
           title: const Text("Nueva Categoría"),
           content: TextField(
@@ -100,7 +102,7 @@ class _GestionarProductosState extends State<GestionarProductos> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context), // Cancelar
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text("Cancelar"),
             ),
             ElevatedButton(
@@ -109,8 +111,24 @@ class _GestionarProductosState extends State<GestionarProductos> {
                   final nueva = Categoria(
                     category: _nuevaCatController.text.trim(),
                   );
+                  
                   await AuthProducts.crearCategoria(nueva);
-                  Navigator.pop(context); // Cerrar diálogo
+                  
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext); // Cerramos usando el context del diálogo
+                  
+                  // Ahora usamos el contexto de la pantalla principal (mainContext)
+                  // para recargar y mostrar el SnackBar
+                  if (mainContext.mounted) {
+                    await _cargarCategorias(); 
+                    
+                    ScaffoldMessenger.of(mainContext).showSnackBar(
+                      const SnackBar(
+                        content: Text("Categoría creada"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text("Guardar"),
@@ -137,13 +155,15 @@ class _GestionarProductosState extends State<GestionarProductos> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 24,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter updateSheet) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 24,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -246,12 +266,18 @@ class _GestionarProductosState extends State<GestionarProductos> {
                   ),
                 ],
 
-                onChanged: (int? nuevoId) {
+                onChanged: (int? nuevoId) async{
                   if (nuevoId == -1) {
-                    _mostrarDialogoNuevaCategoria();
+                    await _mostrarDialogoNuevaCategoria();
+                    updateSheet((){});
                   } else {
                     setState(() {
-                      _categoriaSeleccionada = nuevoId;
+                      updateSheet(() {
+                        _categoriaSeleccionada = nuevoId;
+                      });
+                      setState(() {
+                        _categoriaSeleccionada = nuevoId;
+                      });
                     });
                   }
                 },
@@ -285,7 +311,7 @@ class _GestionarProductosState extends State<GestionarProductos> {
                     try {
                       if (esEdicion) {
                         await AuthProducts.editarProducto(
-                          productoExistente!.idProduct!,
+                          productoExistente.idProduct!,
                           nuevo,
                         );
                       } else {
@@ -313,8 +339,9 @@ class _GestionarProductosState extends State<GestionarProductos> {
             ],
           ),
         ),
-      ),
-    );
+      );
+      }
+    ));
   }
 
   Future<void> _confirmarEliminar(Producto producto) async {
@@ -360,7 +387,7 @@ class _GestionarProductosState extends State<GestionarProductos> {
       ),
     );
   }
-
+/*
   Widget _campo({
     required TextEditingController controller,
     required String label,
@@ -381,7 +408,7 @@ class _GestionarProductosState extends State<GestionarProductos> {
       ),
     );
   }
-
+*/
   @override
   Widget build(BuildContext context) {
     return Scaffold(

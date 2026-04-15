@@ -1,6 +1,6 @@
 // lib/modules/gestionar_ventas.dart
 
-import 'package:app_hibrida/rest_api.dart/auth_products.dart';
+//import 'package:app_hibrida/rest_api.dart/auth_products.dart';
 import 'package:flutter/material.dart';
 import 'package:app_hibrida/models/sale_model.dart';
 import 'package:app_hibrida/layouts/sale_card.dart';
@@ -20,7 +20,7 @@ class GestionarVentas extends StatefulWidget {
 
 class _GestionarVentasState extends State<GestionarVentas> {
   List<Sale> _sales = [];
-  List<Producto> _productos = [];
+  //List<Producto> _productos = [];
   bool _isLoading = true;
   String? _error;
   int? id_producto_selec;

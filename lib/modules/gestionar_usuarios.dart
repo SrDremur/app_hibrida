@@ -69,7 +69,6 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
   // ─── Crear / Editar usuario ────────────────────────────────────────────────
   Future<void> _abrirFormulario({
     Usuario? usuarioExistente,
-    String? password,
   }) async {
     final resultado = await mostrarFormularioUsuario(
       context,
