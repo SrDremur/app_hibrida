@@ -118,7 +118,9 @@ class _ColumnLoginState extends State<ColumnLogin> {
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => MainNavigation(),
+                                    builder: (context) => MainNavigation(
+                                      rol: AuthService.currentUserRol ?? 'consultor', 
+                                    ),
                                   ),
                                 );
                               } else {

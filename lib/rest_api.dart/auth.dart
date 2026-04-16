@@ -10,6 +10,7 @@ class AuthService {
   static String? currentUserName;
   static String? currentUserEmail;
   static String? currentUserRol;
+  static String? currentPassword;
 
   static Future<bool> login(String email, String password) async {
     try {
@@ -28,9 +29,10 @@ class AuthService {
         currentUserId = data['_id'] ?? data['id'] ?? '';
         currentUserName = data['name'] ?? data['nombre'] ?? '';
         currentUserEmail = data['email'] ?? email;
-        currentUserRol = data['rol'] ?? '';
+        currentUserRol = data['role'] ?? '';
+        currentPassword = data['password'] ?? '';
 
-        print("Usuario logueado: $currentUserName (ID: $currentUserId)");
+        print("Usuario logueado: $currentUserName (ID: $currentUserId) password: $currentPassword Rol: $currentUserRol");
         return true;
       } else {
         // Credenciales incorrectas o error de servidor

@@ -2,32 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ReportService {
-<<<<<<< HEAD
-  static const String baseUrl = "https://api-python-app.onrender.com";
-  static const String baseUrl2 = "https://tiendita-caballerito.onrender.com";
-
-  static Future<List<dynamic>> fetchProductos() async {
-    try {
-      // Usamos el endpoint '/products' que ya confirmamos que funciona
-      final response = await http.get(Uri.parse('$baseUrl2/Products'));
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return [];
-    } catch (e) {
-      print('Error en fetchProductos: $e');
-      return [];
-    }
-  }
-
-  static Future<List<dynamic>> fetchVentas() async {
-    try {
-      // Si el endpoint de ventas es /sales, cámbialo aquí
-      final response = await http.get(Uri.parse('$baseUrl/Sale'));
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-=======
   static const String _mongoUrl = "https://tiendita-caballerito.onrender.com";
   static const String _postgresUrl = "https://api-python-app.onrender.com";
 
@@ -35,7 +9,6 @@ class ReportService {
     try {
       final response = await http.get(Uri.parse('$_mongoUrl/Sale'));
       if (response.statusCode == 200) return jsonDecode(response.body);
->>>>>>> 75d84cb10f361b1d070af9c5556d1abe1ccb3921
       return [];
     } catch (e) {
       print('Error en fetchVentas: $e');

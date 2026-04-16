@@ -46,7 +46,7 @@ class _UserFormContentState extends State<_UserFormContent> {
   bool _activo = true;
   bool _verPass = false;
 
-  final List<String> _roles = ['admin', 'vendedor', 'cliente'];
+  final List<String> _roles = ['admin', 'vendedor', 'consultor'];
 
   bool get _esEdicion => widget.usuarioExistente != null;
 
@@ -179,7 +179,7 @@ class _UserFormContentState extends State<_UserFormContent> {
 
             // ── Rol ─────────────────────────────────────────────────────────
             DropdownButtonFormField<String>(
-              value: _rolSeleccionado,
+              value: _roles.contains(_rolSeleccionado) ? _rolSeleccionado : null,
               dropdownColor: _kGreenDark,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(

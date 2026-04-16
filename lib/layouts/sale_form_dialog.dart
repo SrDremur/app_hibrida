@@ -22,6 +22,7 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _userController = TextEditingController();
   final _totalController = TextEditingController();
+  static int? productoSeleccionado;
 
   final user = AuthService.currentUserId;
   final name = AuthService.currentUserName;
@@ -145,7 +146,7 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
   );
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
       final products = _productControllers
           .map(
@@ -154,10 +155,34 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
               quantity: int.tryParse(row['qty']!.text.trim()) ?? 0,
               price: double.tryParse(row['price']!.text.trim()) ?? 0.0,
               subtotal: double.tryParse(row['subtotal']!.text.trim()) ?? 0.0,
-            ),
+            )
           )
           .toList();
+      
+      for (var p in products) {
+        int idEntero = int.parse(p.idProduct);
 
+        // 1. Buscamos el producto actual en la lista
+        final productoOriginal = _productos.firstWhere(
+          (prod) => prod.idProduct == idEntero
+        );
+
+        // 2. CREAMOS UN NUEVO OBJETO (porque los campos son final)
+        // Pasamos todos los datos originales pero restamos la cantidad al stock
+        final productoActualizado = Producto(
+          idProduct: productoOriginal.idProduct,
+          product: productoOriginal.product,
+          stock: productoOriginal.stock - p.quantity, // <--- Aquí se hace la resta
+          price: productoOriginal.price,
+          description: productoOriginal.description,
+          image: productoOriginal.image,
+          id_Category: productoOriginal.id_Category,
+          date_exp: productoOriginal.date_exp,
+        );
+
+        // 3. Enviamos el nuevo objeto a la API
+        await AuthProducts.editarProducto(idEntero, productoActualizado);
+      }
       final sale = Sale(
         id: widget.existingSale?.id,
         idUser: AuthService.currentUserId ?? '',
@@ -292,6 +317,7 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
                         onChanged:  (int? nuevoId) {
                           setState(() {
                             row['id']!.text = nuevoId.toString();
+                            productoSeleccionado = nuevoId;
                           });
                           _Subtotal(i);
                         },

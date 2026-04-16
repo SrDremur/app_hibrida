@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:app_hibrida/layouts/user_card.dart';
 import 'package:app_hibrida/layouts/user_form_dialog.dart';
 import 'package:app_hibrida/rest_api.dart/auth_users.dart';
+import 'package:app_hibrida/rest_api.dart/auth.dart';
 
 class GestionarUsuarios extends StatefulWidget {
   const GestionarUsuarios({super.key});
@@ -94,8 +95,10 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
       } else {
         // ── Crear — pedimos contraseña antes de llamar a la API ─────────────
         final pass = await _pedirContrasena();
-        if (pass == null || pass.isEmpty) return;
-
+        if (pass == null || pass.isEmpty) {
+          print("la contraseña del admin no es correcta"); 
+          return;
+        }
         final creado = await AuthUsers.crearUsuario(resultado, password: pass);
         setState(() => _usuarios.add(creado));
         _mostrarSnack('Usuario creado', esError: false);
@@ -272,7 +275,7 @@ class _GestionarUsuariosState extends State<GestionarUsuarios> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: ['todos', 'admin', 'vendedor', 'cliente'].map((rol) {
+                children: ['todos', 'admin', 'vendedor', 'consultor'].map((rol) {
                   final seleccionado = _filtroRol == rol;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
