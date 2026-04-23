@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class AuthService {
   // Cambia esta URL por la de tu API real
-  static const String baseUrl = "https://tiendita-caballerito.onrender.com";
+  static const String baseUrl = "https://apinode-h3jg8hop0-srdremurs-projects.vercel.app";
 
   // ─── USUARIO LOGUEADO EN MEMORIA ───────────────────────────────────────────
   static String? currentUserId;
@@ -13,41 +13,41 @@ class AuthService {
   static String? currentPassword;
 
   static Future<bool> login(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/login'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"email": email, "password": password}),
-      );
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/login'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"email": email, "password": password}),
+    );
 
-      if (response.statusCode == 200) {
-        // El servidor dice que el usuario y contraseña coinciden
-        // Guardamos los datos del usuario que regresa la API
-        final Map<String, dynamic> data = jsonDecode(response.body);
+    // DEBUG: Mira qué está respondiendo Vercel exactamente
+    print("Status Code: ${response.statusCode}");
 
-        // Ajusta las claves según lo que devuelva TU API
-        currentUserId = data['_id'] ?? data['id'] ?? '';
-        currentUserName = data['name'] ?? data['nombre'] ?? '';
-        currentUserEmail = data['email'] ?? email;
-        currentUserRol = data['role'] ?? '';
-        currentPassword = data['password'] ?? '';
-
-        print("Usuario logueado: $currentUserName (ID: $currentUserId) password: $currentPassword Rol: $currentUserRol");
-        return true;
-      } else {
-        // Credenciales incorrectas o error de servidor
-        final Map<String, dynamic> errorData = jsonDecode(response.body);
-        final String mensajeServidor =
-            errorData['mensaje'] ?? "Error desconocido";
-
-        print("Mensaje del servidor: $mensajeServidor");
-        return false;
-      }
-    } catch (e) {
-      print("Error de conexión: $e");
+    // Si recibimos HTML, no intentamos decodificar como JSON
+    if (response.headers['content-type']?.contains('text/html') ?? false) {
+      print("ERROR: El servidor respondió con HTML. Probablemente la ruta /login no existe o la API crasheó.");
       return false;
     }
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      // MONGODB TIP: Mongo siempre devuelve el ID como '_id'
+      currentUserId = data['_id']?.toString() ?? '';
+      currentUserName = data['username'] ?? data['nombre'] ?? ''; // Revisa este campo en tu modelo
+      currentUserEmail = data['email'] ?? email;
+      currentUserRol = data['role'] ?? '';
+
+      return true;
+    } else {
+      print("Credenciales fallidas: ${response.body}");
+      return false;
+    }
+  } catch (e) {
+    print("Excepción atrapada: $e");
+    return false;
   }
+}
 
   static Future<bool> register(
     String name,

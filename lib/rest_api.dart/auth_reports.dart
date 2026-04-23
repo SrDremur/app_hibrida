@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ReportService {
-  static const String _mongoUrl = "https://tiendita-caballerito.onrender.com";
+  static const String _mongoUrl = "https://apinode-h3jg8hop0-srdremurs-projects.vercel.app";
   static const String _postgresUrl = "https://api-python-app.onrender.com";
 
   static Future<List<dynamic>> fetchVentas() async {

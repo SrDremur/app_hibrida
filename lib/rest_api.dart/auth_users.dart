@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:app_hibrida/layouts/user_card.dart';
 
 class AuthUsers {
-  static const String _baseUrl = "https://tiendita-caballerito.onrender.com";
+  static const String _baseUrl = "https://apinode-h3jg8hop0-srdremurs-projects.vercel.app";
 
   // ─── Mapeo JSON → Usuario ──────────────────────────────────────────────────
   // La API usa: _id, name, email, role, activo
@@ -43,6 +43,35 @@ class AuthUsers {
     }
     return jsonDecode(res.body);
   }
+
+static Future<String?> getUserNameById(String id) async {
+    try {
+      final url = Uri.parse('$_baseUrl/User/$id');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        
+        // MongoDB suele devolver los campos así. 
+        // Prueba con 'username' primero, si no, revisa si es 'nombre' o 'name'.
+        return data['name']?.toString(); 
+      } else {
+        print('Error de MongoDB: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error de red al conectar con Mongo: $e');
+      return null;
+    }
+  }
+
 
   // ─── GET /User ─────────────────────────────────────────────────────────────
   static Future<List<Usuario>> getUsuarios() async {

@@ -6,7 +6,10 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:file_picker/file_picker.dart';
 import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';  // ← NUEVO
+import 'package:share_plus/share_plus.dart';         // ← NUEVO
 import 'package:app_hibrida/rest_api.dart/auth_reports.dart';
+import 'package:flutter/foundation.dart';
 
 class ConsultarReportes extends StatefulWidget {
   const ConsultarReportes({super.key});
@@ -21,7 +24,6 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
 
   bool _estaCargando = false;
 
-  // ✅ Formateador de fecha corregido
   String _formatearFecha(String? iso) {
     if (iso == null) return 'N/A';
     try {
@@ -32,11 +34,51 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
     }
   }
 
+  /// ✅ Detecta la plataforma y guarda/comparte el PDF según corresponda
+Future<void> _guardarPDF(
+  BuildContext context,
+  Uint8List pdfBytes,
+  String tipo,
+) async {
+  final fileName = 'Reporte_${tipo.toLowerCase()}.pdf';
+
+  // ── WEB (PRIMERO) ─────────────────────────
+  if (kIsWeb) {
+    await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+    return;
+  }
+
+  // ── MÓVIL ────────────────────────────────
+  if (Platform.isAndroid || Platform.isIOS) {
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/$fileName');
+    await file.writeAsBytes(pdfBytes);
+
+    await Share.shareXFiles(
+      [XFile(file.path, mimeType: 'application/pdf')],
+      subject: 'Reporte de $tipo',
+    );
+    return;
+  }
+
+  // ── DESKTOP ──────────────────────────────
+  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    String? ruta = await FilePicker.saveFile(
+      fileName: fileName,
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (ruta != null) {
+      await File(ruta).writeAsBytes(pdfBytes);
+    }
+    return;
+  }
+}
   Future<void> _exportarReporte(BuildContext context, String tipo) async {
     setState(() => _estaCargando = true);
 
     try {
-      // 1. CARGA DE DATOS Y VARIABLES (Definidas al inicio para evitar "Undefined name")
+      // 1. CARGA DE DATOS
       List<dynamic> datosBack = [];
       List<dynamic> listaProductos = [];
       double ingresoTotal = 0;
@@ -56,12 +98,10 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
 
       // 2. CÁLCULOS
       for (var item in datosBack) {
-        dynamic valor = (tipo == "Ventas")
-            ? item['total_price']
-            : item['price'];
+        dynamic valor =
+            (tipo == "Ventas") ? item['total_price'] : item['price'];
         ingresoTotal += double.tryParse(valor?.toString() ?? '0') ?? 0.0;
       }
-
       promedio = datosBack.isNotEmpty
           ? (ingresoTotal / datosBack.length).toStringAsFixed(2)
           : '0.00';
@@ -69,19 +109,18 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
       // 3. RECURSOS DEL PDF
       pw.MemoryImage? logoImage;
       try {
-        final ByteData logoData = await rootBundle.load(
-          'assets/images/logo.png',
-        );
+        final ByteData logoData =
+            await rootBundle.load('assets/images/logo.png');
         logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
       } catch (e) {
-        print("❌ Error logo: $e");
+        debugPrint("❌ Error logo: $e");
       }
 
       final pdf = pw.Document();
       final fontRegular = await PdfGoogleFonts.robotoRegular();
       final fontBold = await PdfGoogleFonts.robotoBold();
 
-      // 4. GENERACIÓN DEL DOCUMENTO (Tu diseño original)
+      // 4. GENERACIÓN DEL DOCUMENTO
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
@@ -138,7 +177,7 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
               ),
               pw.SizedBox(height: 25),
 
-              // RESUMEN GENERAL (Aquí ya no hay error de ingresoTotal)
+              // RESUMEN GENERAL
               pw.Text(
                 "Resumen General",
                 style: pw.TextStyle(fontSize: 18, font: fontBold),
@@ -186,7 +225,8 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
                   fontSize: 12,
                 ),
                 cellStyle: pw.TextStyle(font: fontRegular, fontSize: 10),
-                headerDecoration: const pw.BoxDecoration(color: darkGreen),
+                headerDecoration:
+                    const pw.BoxDecoration(color: darkGreen),
                 headers: tipo == "Ventas"
                     ? <String>['#', 'Fecha', 'Productos', 'Total']
                     : <String>['#', 'Producto', 'Stock', 'Precio'],
@@ -206,13 +246,11 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
                             p['id_product']?.toString() == idBuscado,
                         orElse: () => null,
                       );
-
                       String nombre = prodEncontrado != null
                           ? (prodEncontrado['product']?.toString() ??
-                                prodEncontrado['name']?.toString() ??
-                                "Sin nombre")
+                              prodEncontrado['name']?.toString() ??
+                              "Sin nombre")
                           : "ID: $idBuscado";
-
                       nombresList.add("$nombre (x${pEnVenta['quantity']})");
                     }
 
@@ -254,31 +292,23 @@ class _ConsultarReportesState extends State<ConsultarReportes> {
         ),
       );
 
-      // 5. GUARDAR Y NOTIFICAR
+      // 5. GUARDAR SEGÚN PLATAFORMA ← CAMBIO PRINCIPAL
       final Uint8List pdfBytes = await pdf.save();
-      String? ruta = await FilePicker.saveFile(
-        fileName: 'Reporte_${tipo.toLowerCase()}.pdf',
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (ruta != null) {
-        final File archivo = File(ruta);
-        await archivo.writeAsBytes(pdfBytes);
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("✅ Guardado en: $ruta")));
-        }
+      if (context.mounted) {
+        await _guardarPDF(context, pdfBytes, tipo);
       }
     } catch (e) {
-      print("❌ Error general: $e");
+      debugPrint("❌ Error general: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ Error al generar el reporte: $e")),
+        );
+      }
     } finally {
       setState(() => _estaCargando = false);
     }
   }
 
-  // ✅ Método de las cajas de resumen (Dentro de la clase)
   pw.Widget _buildResumenBox(
     String valor,
     String etiqueta,

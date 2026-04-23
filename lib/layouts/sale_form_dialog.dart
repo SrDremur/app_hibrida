@@ -3,6 +3,8 @@ import 'package:app_hibrida/rest_api.dart/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:app_hibrida/models/sale_model.dart';
 import 'package:app_hibrida/rest_api.dart/auth_products.dart';
+import 'package:app_hibrida/rest_api.dart/auth_users.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 const kPink = Color(0xFFE37EAF);
 const kBlack = Color(0xFF060304);
@@ -26,6 +28,8 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
 
   final user = AuthService.currentUserId;
   final name = AuthService.currentUserName;
+  String _vendedorNombre = '';
+
   List<Producto> _productos = [];
 
  List<Map<String, TextEditingController>> _productControllers = [];
@@ -39,6 +43,7 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
     if (_isEditing) {
       _userController.text = widget.existingSale!.idUser;
       _totalController.text = widget.existingSale!.totalPrice.toString();
+      _obtenerNombreVendedor(widget.existingSale!.idUser);
       for (final p in widget.existingSale!.products) {
         _addProductRow(
           idProduct: p.idProduct,
@@ -47,8 +52,24 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
         );
       }
     } else {
+      _vendedorNombre = AuthService.currentUserName ?? 'Cajero';
       _addProductRow();
     }
+  }
+
+    Future<void> _obtenerNombreVendedor(String id) async {
+    final datos = await AuthUsers.getUserNameById(id);
+    if (datos != null && mounted) {
+      setState(() {
+        _vendedorNombre = datos; // Ajusta según tu JSON
+      });
+    }
+  }
+
+  void _showSnack(String message, Color color) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
   void _addProductRow({
@@ -167,21 +188,35 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
           (prod) => prod.idProduct == idEntero
         );
 
-        // 2. CREAMOS UN NUEVO OBJETO (porque los campos son final)
-        // Pasamos todos los datos originales pero restamos la cantidad al stock
-        final productoActualizado = Producto(
-          idProduct: productoOriginal.idProduct,
-          product: productoOriginal.product,
-          stock: productoOriginal.stock - p.quantity, // <--- Aquí se hace la resta
-          price: productoOriginal.price,
-          description: productoOriginal.description,
-          image: productoOriginal.image,
-          id_Category: productoOriginal.id_Category,
-          date_exp: productoOriginal.date_exp,
-        );
+        final total = productoOriginal.stock - p.quantity;
 
-        // 3. Enviamos el nuevo objeto a la API
-        await AuthProducts.editarProducto(idEntero, productoActualizado);
+        if (total >=0 ){
+          // 2. CREAMOS UN NUEVO OBJETO (porque los campos son final)
+          // Pasamos todos los datos originales pero restamos la cantidad al stock
+          final productoActualizado = Producto(
+            idProduct: productoOriginal.idProduct,
+            product: productoOriginal.product,
+            stock: total, // <--- Aquí se hace la resta
+            price: productoOriginal.price,
+            description: productoOriginal.description,
+            image: productoOriginal.image,
+            id_Category: productoOriginal.id_Category,
+            date_exp: productoOriginal.date_exp,
+          );
+          // 3. Enviamos el nuevo objeto a la API
+          await AuthProducts.editarProducto(idEntero, productoActualizado);
+        }else{
+          final disponible = productoOriginal.stock;
+          print("stock insuficiente");
+          // 1. Cerramos el diálogo primero para liberar la pantalla
+          Navigator.pop(context); 
+
+          // 2. Lanzamos el mensaje después de un microsegundo para que el diálogo ya no exista
+          Future.microtask(() {
+            _showSnack('Stock insuficiente, disponibles: $disponible', Colors.redAccent);
+          });
+          return;
+        }
       }
       final sale = Sale(
         id: widget.existingSale?.id,
@@ -237,7 +272,7 @@ class _SaleFormDialogState extends State<SaleFormDialog> {
               const SizedBox(height: 20),
               //Usuario
               Text(
-                'Vendedor: $name',
+                'Vendedor: $_vendedorNombre',
                 style: TextStyle(
                   color: kBlack,
                   fontWeight: FontWeight.bold,

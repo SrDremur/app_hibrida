@@ -4,7 +4,7 @@ import 'package:app_hibrida/models/sale_model.dart';
 
 class SalesService {
   static const String _baseUrl =
-      'https://tiendita-caballerito.onrender.com'; // <-- cambia esto
+      'https://apinode-h3jg8hop0-srdremurs-projects.vercel.app'; // <-- cambia esto
 
   // GET todas las ventas
   static Future<List<Sale>> getSales() async {
